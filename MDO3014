@@ -1,0 +1,149 @@
+# coding=utf-8
+import time
+from datetime import datetime
+
+import pyvisa
+
+
+class Tektronix_MSO64:
+
+    def __init__(self):
+        rm = pyvisa.ResourceManager("C:/Windows/System32/visa32.dll")
+        self.inst = rm.open_resource('TCPIP0::192.168.1.4::inst0::INSTR')
+        self.inst.write("*IDN?")  # 返回示波器识别码
+        # print(self.inst.read())
+        self.inst.write('*CLS')  # 清除示波器状态
+        self.inst.write('*ESR?')  # 查询标准状态寄存器的内容
+        # print(self.inst.read())
+        self.inst.write('ALLEV?')  # 使示波器返回所有事件及其消息
+        # print(self.inst.read())
+        # self.inst.write('FACTORY')  # 恢复出厂设置
+        self.inst.timeout = 50000
+
+    def close(self):
+        self.inst.write('*CLS')  # 清除示波器状态
+        self.inst.write('*ESR?')  # 查询标准状态寄存器的内容
+        # print(self.inst.read())
+        # self.inst.write('FACTORY')  # 恢复出厂设置
+        self.inst.close()
+
+    def set_horizontal(self, VOLTS, SCALE):
+        self.inst.write('CH1:VOLTS %s' % VOLTS)  # 设置示波器的垂直刻度
+        self.inst.write('HOR:MAIN:SCALE %se-3' % SCALE)  # 设置示波器的水平刻度
+        self.inst.write('TRIG:MAIN:LEVEL 2.4')  # 触发装置设置为2.4V
+
+    def operate_set(self):
+        self.inst.write('AUTORANGE:STATE ON')  # 启动自动量程功能
+        self.inst.write('ACQUIRE:STOPAFTER SEQUENCE')  # 按下RUN/STOP按钮将示波器设置为停止采集
+        self.inst.write('ACQuire:STATE ON')  # 开始采集数据，将采集次数重置为0
+
+    # self.inst.write('*OPC?')  # 查询OPC操作是否已完成
+    # print(self.inst.read())
+
+    def period_measure(self):
+        self.inst.write('MEASU:IMMED:TYPE PERIOD')  # 设置为测量周期
+        self.inst.write('MEASU:IMMED:VALUE?')  # 执行前面命令指定的立即示波器测量
+        global reperiod
+        str_rperiod = self.inst.read()
+        str_rperiod = str_rperiod[str_rperiod.rfind(' '):]
+        rperiod = float(str_rperiod) * 1000
+        rperiod = '%.2f' % rperiod
+        reperiod = float(rperiod)
+        print('实测周期:', reperiod)
+
+    def frequency_measure(self):
+        self.inst.write('MEASU:IMMED:TYPE FREQ')  # 设置为测量频率
+        self.inst.write('MEASU:IMMED:VALUE?')  # 执行前面命令指定的立即示波器测量
+        global rfrequent
+        str_frequency = self.inst.read()
+        str_frequency = str_frequency[str_frequency.rfind(' '):]
+        rfrequency = float(str_frequency)
+        rfrequency = '%.2f' % rfrequency
+        rfrequent = float(rfrequency)
+        print('实测频率:', rfrequent)
+
+    def duty_measure(self):
+        self.inst.write('MEASU:IMMED:TYPE PDUTY')  # 设置为测量占空比
+        self.inst.write('MEASU:IMMED:VALUE?')  # 执行前面命令指定的立即示波器测量
+        global reduty
+        str_duty = self.inst.read()
+        str_duty = str_duty[str_duty.rfind(' '):]
+        rduty = float(str_duty)
+        rduty = '%.2f' % rduty
+        reduty = float(rduty)
+        print('实测占空比:', reduty)
+
+    def rise_time_measure(self):
+        self.inst.write('MEASU:IMMED:TYPE RISE')  # 设置为测量上升时间
+        self.inst.write('MEASU:IMMED:VALUE?')  # 执行前面命令指定的立即示波器测量
+        str_rise = self.inst.read()
+        str_rise = str_rise[str_rise.rfind(' '):]
+        rise = float(str_rise)
+        rise = '%.2f' % rise
+        riser = float(rise)
+        print('实测上升时间:', riser)
+
+    def positive_pulse_width_measure(self):
+        self.inst.write('MEASU:IMMED:TYPE PWIDTH')  # 设置为测量正脉冲宽度
+        self.inst.write('MEASU:IMMED:VALUE?')  # 执行前面命令指定的立即示波器测量
+        str_positive_pulse_width = self.inst.read()
+        str_positive_pulse_width = str_positive_pulse_width[str_positive_pulse_width.rfind(' ')]
+        positive_pulse_width = float(str_positive_pulse_width)
+        positive_pulse_width = '%.2f' % positive_pulse_width
+        print('实测正脉冲宽度为:', positive_pulse_width)
+
+    def negative_pulse_width_measure(self):
+        self.inst.write('MEASU:IMMED:TYPE NWIDTH')  # 设置为测量负脉冲宽度
+        self.inst.write('MEASU:IMMED:VALUE?')  # 执行前面命令指定的立即示波器测量
+        str_negative_pulse_width = self.inst.read()
+        str_negative_pulse_width = str_negative_pulse_width[str_negative_pulse_width.rfind(' ')]
+        negative_pulse_width = float(str_negative_pulse_width)
+        negative_pulse_width = '%.2f' % negative_pulse_width
+        print('实测负脉冲宽度:', negative_pulse_width)
+
+    def basic_set(self):
+        self.inst.write('*ESR?')  # 查询标准状态寄存器的内容
+        # print(self.inst.read())
+        self.inst.write('ALLEV?')  # 使示波器返回所有事件及其消息
+        # print(self.inst.read())
+        self.inst.write('WFMPRE?')  # 查询波形数据的编码类型
+        # print(self.inst.read())
+
+    def waveform_save(self):
+        self.inst.write('RECALL:WAVEFORM' 'D:\TST-PRD\TST-01.CSV')
+        self.inst.write('SELECT:REFC')
+
+    def get_screen(self):
+        self.inst.write('SAVE:IMAGE "D:/waveform_screen.bmp"')
+        time.sleep(1)
+        self.inst.write('FILESYSTEM:READFILE "D:/waveform_screen.bmp"')
+        img = self.inst.read_raw()
+        dt = datetime.now()
+        fileName = dt.strftime("%Y%m%d_%H%M%S.bmp")  # 以当前时间建立文件名
+        imgFile = open('./waveform/' + fileName, "wb")  # 打开图片文件，如果没有就会新建一个
+        imgFile.write(img)
+        imgFile.close()
+        self.inst.write('FILESYSTEM:DELETE "D:/waveform_screen.bmp"')
+
+
+def oscilloscoper():
+    rm = Tektronix_MSO64()
+    rm.set_horizontal(2.0, 10)
+    # rm.operate_set()
+    rm.period_measure()
+    rm.frequency_measure()
+    rm.duty_measure()
+    rm.basic_set()
+    rm.close()
+
+
+if __name__ == "__main__":
+    oscill = Tektronix_MSO64()
+    oscill.set_horizontal(2.0, 1)
+    # oscill.operate_set()
+    oscill.period_measure()
+    oscill.frequency_measure()
+    oscill.duty_measure()
+    # oscill.waveform_save()
+    oscill.basic_set()
+    # oscill.get_screen()
