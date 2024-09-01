@@ -1,0 +1,6 @@
+import pyvisa
+import time
+class waveform_generator:
+    def __init__(self,instrument_address):
+        self.instrument_address = instrument_address
+        self.waveform=0
