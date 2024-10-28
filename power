@@ -1,0 +1,35 @@
+import pyvisa
+
+def get_and_set_power_supply_parameters(resource_address):
+    # 创建 VISA 资源管理器
+    rm = pyvisa.ResourceManager()
+    
+    try:
+        # 打开与电源设备的连接
+        power_supply = rm.open_resource(resource_address)
+        
+        # 获取电源的标识信息
+        idn = power_supply.query("*IDN?")
+        print(f"Power Supply ID: {idn}")
+        
+        # 设置电压和电流
+        power_supply.write("VOLT 30")  # 设置电压为 30V
+        power_supply.write("CURR 1")   # 设置电流为 1A
+        print("Voltage set to 30V and current set to 1A.")
+        
+        # 获取当前设定的电压和电流值
+        voltage = power_supply.query("MEAS:VOLT?")
+        current = power_supply.query("MEAS:CURR?")
+        print(f"Measured Voltage: {voltage} V")
+        print(f"Measured Current: {current} A")
+        
+    except Exception as e:
+        print(f"Error communicating with power supply: {e}")
+    finally:
+        # 关闭连接
+        power_supply.close()
+
+# 调用函数并传入电源设备的资源地址
+# resource_address 通常为电源设备的 VISA 地址，例如 "TCPIP0::192.168.1.101::INSTR"
+resource_address = "TCPIP0::192.168.1.101::INSTR"  # 根据实际情况替换
+get_and_set_power_supply_parameters(resource_address)
