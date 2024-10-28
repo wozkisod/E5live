@@ -1,0 +1,49 @@
+import pyvisa
+
+def get_spectrum_analyzer_parameters(resource_address):
+    # 创建 VISA 资源管理器
+    rm = pyvisa.ResourceManager()
+    
+    try:
+        # 打开与频谱仪的连接
+        spectrum_analyzer = rm.open_resource(resource_address)
+        
+        # 获取频谱仪的标识信息
+        idn = spectrum_analyzer.query("*IDN?")
+        print(f"Spectrum Analyzer ID: {idn}")
+        
+        # 获取中心频率
+        center_frequency = spectrum_analyzer.query("FREQ:CENT?")
+        print(f"Center Frequency: {center_frequency} Hz")
+        
+        # 获取频率范围
+        start_frequency = spectrum_analyzer.query("FREQ:START?")
+        stop_frequency = spectrum_analyzer.query("FREQ:STOP?")
+        print(f"Frequency Range: {start_frequency} Hz to {stop_frequency} Hz")
+        
+        # 获取分辨率带宽 (RBW)
+        rbw = spectrum_analyzer.query("BAND?")
+        print(f"Resolution Bandwidth (RBW): {rbw} Hz")
+        
+        # 获取视频带宽 (VBW)
+        vbw = spectrum_analyzer.query("BAND:VID?")
+        print(f"Video Bandwidth (VBW): {vbw} Hz")
+        
+        # 获取扫描时间
+        sweep_time = spectrum_analyzer.query("SWE:TIME?")
+        print(f"Sweep Time: {sweep_time} s")
+        
+        # 获取参考电平
+        ref_level = spectrum_analyzer.query("DISP:WIND:TRAC:Y:SCAL:RLEV?")
+        print(f"Reference Level: {ref_level} dBm")
+        
+    except Exception as e:
+        print(f"Error communicating with spectrum analyzer: {e}")
+    finally:
+        # 关闭连接
+        spectrum_analyzer.close()
+
+# 调用函数并传入频谱仪的资源地址
+# resource_address 通常为频谱仪的 VISA 地址，例如 "TCPIP0::192.168.1.100::INSTR"
+resource_address = "TCPIP0::192.168.1.100::INSTR"  # 根据实际情况替换
+get_spectrum_analyzer_parameters(resource_address)
