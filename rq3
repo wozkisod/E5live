@@ -4,3 +4,6 @@ class waveform_generator:
     def __init__(self,instrument_address):
         self.instrument_address = instrument_address
         self.waveform=0
+from datetime import datetime
+formatted_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+print("格式化后的日期和时间：", formatted_time)
