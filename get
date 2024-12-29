@@ -1,0 +1,45 @@
+import requests
+from msal import ConfidentialClientApplication
+
+# Azure 应用配置
+CLIENT_ID = "YOUR_CLIENT_ID"  # 替换为 Azure 应用的客户端 ID
+CLIENT_SECRET = "YOUR_CLIENT_SECRET"  # 替换为客户端密钥
+TENANT_ID = "YOUR_TENANT_ID"  # 替换为租户 ID
+AUTHORITY = f"https://login.microsoftonline.com/{TENANT_ID}"
+SCOPES = ["https://graph.microsoft.com/.default"]
+
+# Microsoft Graph API 端点
+GRAPH_API_ENDPOINT = "https://graph.microsoft.com/v1.0/users"
+
+# 获取访问令牌
+def get_access_token():
+    app = ConfidentialClientApplication(
+        client_id=CLIENT_ID,
+        client_credential=CLIENT_SECRET,
+        authority=AUTHORITY,
+    )
+    result = app.acquire_token_for_client(scopes=SCOPES)
+    if "access_token" in result:
+        return result["access_token"]
+    else:
+        raise Exception("获取访问令牌失败: ", result.get("error"), result.get("error_description"))
+
+# 调用 Microsoft Graph API
+def get_users():
+    access_token = get_access_token()
+    headers = {"Authorization": f"Bearer {access_token}"}
+    response = requests.get(GRAPH_API_ENDPOINT, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        raise Exception(f"请求失败: {response.status_code}, {response.text}")
+
+# 主函数
+if __name__ == "__main__":
+    try:
+        users = get_users()
+        print("用户列表:")
+        for user in users.get("value", []):
+            print(f"- {user['displayName']} ({user['mail']})")
+    except Exception as e:
+        print("错误:", e)
